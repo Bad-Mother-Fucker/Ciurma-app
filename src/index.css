@@ -1,0 +1,63 @@
+@import 'tailwindcss';
+@import '../brand/tokens.css';
+
+@theme {
+  --color-fondale: #0e2a33;
+  --color-rotta: #1f7a8c;
+  --color-cima: #e4a03c;
+  --color-salso: #e9efee;
+  --color-alga: #3e8e6b;
+  --color-secca: #c4503e;
+
+  --font-titoli: 'Fraunces', ui-serif, Georgia, serif;
+  --font-interfaccia: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+
+  --text-13: 0.8125rem;
+  --text-15: 0.9375rem;
+  --text-18: 1.125rem;
+  --text-24: 1.5rem;
+  --text-34: 2.125rem;
+  --text-48: 3rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--color-salso);
+  color: var(--color-fondale);
+  font-family: var(--font-interfaccia);
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2,
+h3,
+.numero-grande {
+  font-family: var(--font-titoli);
+}
+
+/* Focus sempre visibile, per accessibilità da tastiera. */
+:focus-visible {
+  outline: 3px solid var(--color-cima);
+  outline-offset: 2px;
+}
+
+.touch-target {
+  min-height: var(--touch-min);
+  min-width: var(--touch-min);
+}
