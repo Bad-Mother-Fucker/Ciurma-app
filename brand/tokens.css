@@ -1,0 +1,42 @@
+/**
+ * Ciurma — design tokens.
+ * Palette, tipografia e scala testi definite in PIANO.md / prompt di build.
+ */
+
+:root {
+  /* Colori */
+  --colore-fondale: #0e2a33;
+  --colore-rotta: #1f7a8c;
+  --colore-cima: #e4a03c;
+  --colore-salso: #e9efee;
+  --colore-alga: #3e8e6b;
+  --colore-secca: #c4503e;
+
+  /* Superfici */
+  --colore-sfondo: var(--colore-salso);
+  --colore-testo: var(--colore-fondale);
+  --colore-superficie: #ffffff;
+
+  /* Tipografia */
+  --font-titoli: 'Fraunces', ui-serif, Georgia, serif;
+  --font-interfaccia: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+
+  /* Scala testi */
+  --testo-13: 0.8125rem;
+  --testo-15: 0.9375rem;
+  --testo-18: 1.125rem;
+  --testo-24: 1.5rem;
+  --testo-34: 2.125rem;
+  --testo-48: 3rem;
+
+  /* Target touch minimo */
+  --touch-min: 44px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --colore-sfondo: var(--colore-fondale);
+    --colore-testo: var(--colore-salso);
+    --colore-superficie: #123640;
+  }
+}
