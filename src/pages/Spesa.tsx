@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { AggiungiDallaDispensa } from '../components/AggiungiDallaDispensa';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
 import type { VoceSpesa } from '../types/db';
@@ -9,6 +10,7 @@ export function Spesa() {
   const casaId = membro?.casa_id;
   const queryClient = useQueryClient();
   const [nuovaVoce, setNuovaVoce] = useState('');
+  const [mostraDaDispensa, setMostraDaDispensa] = useState(false);
 
   const { data: voci = [], isLoading } = useQuery({
     queryKey: ['voci-spesa', casaId],
@@ -72,15 +74,43 @@ export function Spesa() {
     },
   });
 
+  const chiudiSpesa = useMutation({
+    mutationFn: async () => {
+      if (voci.length === 0) return;
+      const { error } = await supabase
+        .from('voce_spesa')
+        .update({ presa_il: new Date().toISOString(), presa_da: membro!.id })
+        .in('id', voci.map((v) => v.id));
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalida();
+      void queryClient.invalidateQueries({ queryKey: ['prodotti', casaId] });
+    },
+  });
+
   if (isLoading) return <p className="p-6 text-15 text-fondale/60">Carico la lista…</p>;
 
   return (
     <div className="min-h-screen px-4 pb-24 pt-6">
-      <h1 className="text-24 font-semibold">Spesa</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-24 font-semibold">Spesa</h1>
+        {voci.length > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm('Segnare tutta la lista come presa?')) chiudiSpesa.mutate();
+            }}
+            className="touch-target text-13 font-medium text-rotta"
+          >
+            Chiudi la spesa
+          </button>
+        )}
+      </div>
 
       {voci.length === 0 ? (
         <p className="mt-6 text-15 text-fondale/60">
-          Lista vuota. Aggiungi una voce libera qui sotto, o vai in Dispensa per aggiungere ciò che manca.
+          Lista vuota. Aggiungi una voce libera qui sotto, o aggiungi ciò che manca dalla dispensa.
         </p>
       ) : (
         <ul className="mt-4 flex flex-col gap-2">
@@ -110,6 +140,23 @@ export function Spesa() {
           }}
         />
       </div>
+
+      <button
+        type="button"
+        onClick={() => setMostraDaDispensa(true)}
+        className="touch-target mt-3 w-full rounded-xl border border-fondale/20 px-4 py-3 text-15 font-medium text-fondale/70"
+      >
+        Aggiungi dalla dispensa
+      </button>
+
+      {mostraDaDispensa && membro && casaId && (
+        <AggiungiDallaDispensa
+          casaId={casaId}
+          membroId={membro.id}
+          vociAperte={voci}
+          onChiudi={() => setMostraDaDispensa(false)}
+        />
+      )}
     </div>
   );
 }
