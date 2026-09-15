@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
+import { BannerErrore } from '../components/BannerErrore';
+import { messaggioErroreGenerico } from '../lib/erroreGenerico';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
 import type { CategoriaDispensa, Prodotto, TipoConteggio } from '../types/db';
@@ -37,6 +39,7 @@ export function Dispensa() {
   const [ricerca, setRicerca] = useState('');
   const [nuovoNome, setNuovoNome] = useState('');
   const [selezionati, setSelezionati] = useState<Set<string>>(new Set());
+  const [errore, setErrore] = useState<string | null>(null);
 
   const { data: prodotti = [], isLoading } = useQuery({
     queryKey: ['prodotti', casaId],
@@ -61,6 +64,7 @@ export function Dispensa() {
       setNuovoNome('');
       invalida();
     },
+    onError: (e) => setErrore(messaggioErroreGenerico(e, 'aggiungere il prodotto')),
   });
 
   const aggiornaQuantita = useMutation({
@@ -69,6 +73,7 @@ export function Dispensa() {
       if (error) throw error;
     },
     onSuccess: invalida,
+    onError: (e) => setErrore(messaggioErroreGenerico(e, 'aggiornare la quantità')),
   });
 
   const aggiungiASpesa = useMutation({
@@ -87,6 +92,7 @@ export function Dispensa() {
       setSelezionati(new Set());
       void queryClient.invalidateQueries({ queryKey: ['voci-spesa-aperte', casaId] });
     },
+    onError: (e) => setErrore(messaggioErroreGenerico(e, 'aggiungere alla spesa')),
   });
 
   const filtrati = useMemo(
@@ -128,6 +134,8 @@ export function Dispensa() {
           }}
         />
       </div>
+
+      <BannerErrore messaggio={errore} onChiudi={() => setErrore(null)} />
 
       {prodotti.length === 0 ? (
         <p className="mt-6 text-15 text-fondale/60">

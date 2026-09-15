@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { AggiungiDallaDispensa } from '../components/AggiungiDallaDispensa';
+import { BannerErrore } from '../components/BannerErrore';
+import { messaggioErroreGenerico } from '../lib/erroreGenerico';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
 import type { VoceSpesa } from '../types/db';
@@ -11,6 +13,7 @@ export function Spesa() {
   const queryClient = useQueryClient();
   const [nuovaVoce, setNuovaVoce] = useState('');
   const [mostraDaDispensa, setMostraDaDispensa] = useState(false);
+  const [errore, setErrore] = useState<string | null>(null);
 
   const { data: voci = [], isLoading } = useQuery({
     queryKey: ['voci-spesa', casaId],
@@ -58,6 +61,7 @@ export function Spesa() {
       setNuovaVoce('');
       invalida();
     },
+    onError: (e) => setErrore(messaggioErroreGenerico(e, 'aggiungere la voce')),
   });
 
   const spunta = useMutation({
@@ -72,6 +76,7 @@ export function Spesa() {
       invalida();
       void queryClient.invalidateQueries({ queryKey: ['prodotti', casaId] });
     },
+    onError: (e) => setErrore(messaggioErroreGenerico(e, 'segnare la voce come presa')),
   });
 
   const chiudiSpesa = useMutation({
@@ -87,6 +92,7 @@ export function Spesa() {
       invalida();
       void queryClient.invalidateQueries({ queryKey: ['prodotti', casaId] });
     },
+    onError: (e) => setErrore(messaggioErroreGenerico(e, 'chiudere la spesa')),
   });
 
   if (isLoading) return <p className="p-6 text-15 text-fondale/60">Carico la lista…</p>;
@@ -107,6 +113,8 @@ export function Spesa() {
           </button>
         )}
       </div>
+
+      <BannerErrore messaggio={errore} onChiudi={() => setErrore(null)} />
 
       {voci.length === 0 ? (
         <p className="mt-6 text-15 text-fondale/60">

@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { AssegnazioniCategoria } from '../components/AssegnazioniCategoria';
+import { BannerErrore } from '../components/BannerErrore';
+import { messaggioErroreGenerico } from '../lib/erroreGenerico';
 import { BottoneSpunta } from '../components/BottoneSpunta';
 import { DettaglioAttivita } from '../components/DettaglioAttivita';
 import { DettaglioCategoria } from '../components/DettaglioCategoria';
@@ -38,6 +40,7 @@ export function Attivita() {
   const [nuovaAttivita, setNuovaAttivita] = useState<Record<string, string>>({});
   const [cadenzaNuovaAttivita, setCadenzaNuovaAttivita] = useState<Record<string, number>>({});
   const [mostraRiepilogo, setMostraRiepilogo] = useState(false);
+  const [errore, setErrore] = useState<string | null>(null);
 
   const invalida = () => {
     void queryClient.invalidateQueries({ queryKey: ['categorie', casaId] });
@@ -55,6 +58,7 @@ export function Attivita() {
       setNuovaCategoria('');
       invalida();
     },
+    onError: (e) => setErrore(messaggioErroreGenerico(e, 'creare la categoria')),
   });
 
   const creaAttivita = useMutation({
@@ -65,6 +69,7 @@ export function Attivita() {
       if (error) throw error;
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['attivita', casaId] }),
+    onError: (e) => setErrore(messaggioErroreGenerico(e, "creare l'attività")),
   });
 
   const attivita: AttivitaTipo[] = attivitaRows.map((a: AttivitaRow) => ({
@@ -93,6 +98,8 @@ export function Attivita() {
           {mostraRiepilogo ? 'Nascondi riepilogo' : 'Chi fa cosa'}
         </button>
       </div>
+
+      <BannerErrore messaggio={errore} onChiudi={() => setErrore(null)} />
 
       {mostraRiepilogo && (
         <div className="mt-4">
