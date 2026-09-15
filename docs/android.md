@@ -30,17 +30,38 @@ Da Android Studio: Run ▶ su un emulatore o dispositivo connesso via USB
 
 ## Icona e splash dal marchio
 
-Servono asset reali generati dai colori/tipografia in `brand/tokens.css`
-(Fondale `#0E2A33` come sfondo, wordmark "Ciurma" o l'icona da
-`public/favicon.svg`). Usa `@capacitor/assets`:
+Fatto: icona (una ruota del timone, a tema con "Ciurma"/equipaggio) in Cima
+su sfondo Fondale, generata dai token del marchio. Niente più placeholder a
+tinta unita.
+
+`@capacitor/assets` (che useremmo normalmente per generare tutte le
+risoluzioni da un sorgente) dipende da `sharp`/`tar` con una vulnerabilità
+critica nota (node-tar, nessuna fix disponibile compatibile) e avrebbe
+anche retrocesso `@capacitor/cli`: non vale il rischio per un'icona. Al suo
+posto, `scripts/genera-icona.cjs` e `scripts/genera-icona-adattiva.cjs`
+disegnano l'icona a livello di pixel (nessuna libreria immagine) e
+producono:
+
+- `public/pwa-192.png` / `public/pwa-512.png` (PWA)
+- `android/app/src/main/res/mipmap-*/ic_launcher.png` e `ic_launcher_round.png`
+  (icona legacy, pre-Android 8)
+- `android/app/src/main/res/mipmap-*/ic_launcher_foreground.png` (icona
+  adattiva, sfondo trasparente entro la "safe zone" del 66%)
+- `android/app/src/main/res/drawable*/splash.png` via `scripts/genera-splash.cjs`
+
+Il colore di sfondo dell'icona adattiva (`values/ic_launcher_background.xml`)
+è impostato su Fondale. Per rigenerare dopo un cambio di palette:
 
 ```bash
-npm install -D @capacitor/assets
-npx capacitor-assets generate --android
+node scripts/genera-icona.cjs public/pwa-512.png 512
+node scripts/genera-icona-adattiva.cjs android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png 432
+# vedi i tre script in scripts/ per l'elenco completo delle dimensioni
 ```
 
-Questo passaggio **non è stato eseguito**: mancano ancora asset sorgente ad
-alta risoluzione (icona 1024×1024, splash) — vedi PIANO.md.
+Nota: `android/app/src/main/res/values/colors.xml` non esisteva nello
+scaffold generato da Capacitor pur essendo referenziato da `styles.xml`
+(`@color/colorPrimary` ecc.) — build-breaking se non aggiunto. Corretto in
+questa sessione con i colori del marchio.
 
 ## OAuth Google nativo
 
