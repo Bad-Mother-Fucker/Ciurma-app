@@ -7,6 +7,13 @@
  */
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
+import {
+  ATTIVITA_CUCINA,
+  ATTIVITA_FACCENDE,
+  CATEGORIA_CUCINA_NOME,
+  CATEGORIA_FACCENDE_NOME,
+  PRODOTTI_INIZIALI,
+} from '../src/lib/seedIniziale';
 
 const url = process.env.VITE_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -17,137 +24,6 @@ if (!url || !serviceRoleKey) {
 }
 
 const admin = createClient(url, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
-
-const CUCINA = [
-  { nome: 'Preparare la colazione', cadenza: 1, giorni: null },
-  { nome: 'Preparare il pranzo', cadenza: 1, giorni: null },
-  { nome: 'Preparare la cena', cadenza: 1, giorni: null },
-  { nome: 'Pianificare i pasti della settimana', cadenza: 7, giorni: [0] },
-];
-
-const FACCENDE: Array<{ nome: string; cadenza: number; giorni: number[] | null }> = [
-  { nome: 'Riordinare', cadenza: 1, giorni: null },
-  { nome: 'Buttare la spazzatura', cadenza: 2, giorni: null },
-  { nome: 'Svuotare il secchio del climatizzatore', cadenza: 3, giorni: null },
-  { nome: 'Svuotare e riporre lo stendino', cadenza: 3, giorni: null },
-  { nome: 'Innaffiare le piante', cadenza: 4, giorni: null },
-  { nome: 'Lavatrice', cadenza: 3, giorni: [2, 4] },
-  { nome: 'Spolverare', cadenza: 7, giorni: null },
-  { nome: 'Lavare il pavimento', cadenza: 7, giorni: null },
-  { nome: 'Pulire il bagno', cadenza: 7, giorni: null },
-  { nome: 'Pulire la doccia', cadenza: 7, giorni: null },
-  { nome: 'Pulire la camera da letto', cadenza: 7, giorni: null },
-  { nome: 'Pulire scrivania e angolo ingresso', cadenza: 7, giorni: null },
-  { nome: 'Fare la spesa', cadenza: 7, giorni: null },
-  { nome: 'Pulire il terrazzo', cadenza: 14, giorni: null },
-  { nome: 'Pulire la friggitrice', cadenza: 14, giorni: null },
-  { nome: 'Pulire la brocca', cadenza: 14, giorni: null },
-  { nome: "Pulire l'aspirapolvere", cadenza: 14, giorni: null },
-  { nome: "Riordinare l'armadio", cadenza: 30, giorni: null },
-  { nome: 'Pulire il frigorifero', cadenza: 30, giorni: null },
-  { nome: 'Pulire i vetri', cadenza: 30, giorni: null },
-  { nome: 'Pulire i cassetti della cucina', cadenza: 30, giorni: null },
-];
-
-// Stessa identica lista di db/seed.sql: se cambia una delle due, aggiornare
-// anche l'altra (vedi nota in PIANO.md).
-const COUNTABLE = new Set([
-  'Uova BIO',
-  'Yogurt bianco senza lattosio BIO',
-  'Yogurt di capra o pecora',
-  'Hamburger di pollo',
-  'Bistecchina di carni bianche',
-  'Hamburger di vitello',
-  'Orata',
-  "Trancio di salmone d'Alaska",
-  'Avocado',
-  'Banana BIO',
-  'Kiwi gialli',
-  'Mele',
-  'Finocchi',
-  'Scarola',
-  'Indivia',
-  'Melanzane',
-  'Piadine',
-  'Filetti di tonno al naturale (vetro)',
-  'Tisana malva',
-]);
-
-const PRODOTTI_FRIGO = [
-  'Uova BIO',
-  'Albume',
-  'Yogurt bianco senza lattosio BIO',
-  'Yogurt di capra o pecora',
-  'Ricotta di capra',
-  'Parmigiano Reggiano DOP 36 mesi',
-  'Grana a scaglie',
-  'Burro ghee',
-  'Prosciutto crudo (San Daniele o Parma)',
-  'Petto di pollo',
-  'Straccetti di pollo',
-  'Hamburger di pollo',
-  'Bocconcini di tacchino',
-  'Bistecchina di carni bianche',
-  'Straccetti di manzo',
-  'Carne di vitello macinata',
-  'Hamburger di vitello',
-  'Orata',
-  'Filetto di merluzzo o nasello',
-  "Trancio di salmone d'Alaska",
-  "Salmone selvaggio d'Alaska affumicato",
-  // Frutta e verdura (nello schema condividono la categoria "frigo")
-  'Avocado',
-  'Banana BIO',
-  'Kiwi gialli',
-  'Mele',
-  'Mirtilli',
-  'Carote',
-  'Finocchi',
-  'Scarola',
-  'Indivia',
-  'Lattughino',
-  'Misticanza',
-  'Rucola',
-  'Pomodorini',
-  'Zucca',
-  'Zucchine',
-  'Melanzane',
-  'Bietole',
-  'Patate',
-  'Patate dolci',
-  'Piselli',
-];
-
-const PRODOTTI_DISPENSA = [
-  'Quinoa',
-  'Couscous',
-  'Riso italiano',
-  'Pasta di grano saraceno',
-  'Pasta di legumi Felicia',
-  "Fiocchi d'avena",
-  "Fiocchi d'avena tostati",
-  'Farina tollerata',
-  'Pane a lievito madre',
-  'Piadine',
-  'Chips di patate',
-  'Filetti di tonno al naturale (vetro)',
-  'Olio extra vergine di oliva',
-  'Olive taggiasche',
-  'Noci',
-  'Crema di mandorle 100%',
-  'Cocco rapè',
-  'Cioccolato fondente 85%',
-  'Cannella',
-  'Alloro',
-  'Basilico',
-  'Salvia',
-  'Tisana malva',
-];
-
-const PRODOTTI: Array<{ nome: string; categoria: string; tipo: string }> = [
-  ...PRODOTTI_FRIGO.map((nome) => ({ nome, categoria: 'frigo', tipo: COUNTABLE.has(nome) ? 'countable' : 'uncountable' })),
-  ...PRODOTTI_DISPENSA.map((nome) => ({ nome, categoria: 'dispensa', tipo: COUNTABLE.has(nome) ? 'countable' : 'uncountable' })),
-];
 
 async function trovaOCreaUtente(email: string, nome: string) {
   const { data: elenco, error: erroreElenco } = await admin.auth.admin.listUsers();
@@ -190,17 +66,17 @@ async function main() {
   console.log('Creo categorie e attività…');
   const { data: catCucina } = await admin
     .from('categoria_attivita')
-    .insert({ casa_id: casa.id, nome: 'Cucina', icona: 'utensils', colore: '#E4A03C', ordine: 0 })
+    .insert({ casa_id: casa.id, nome: CATEGORIA_CUCINA_NOME, icona: 'utensils', colore: '#E4A03C', ordine: 0 })
     .select()
     .single();
   const { data: catFaccende } = await admin
     .from('categoria_attivita')
-    .insert({ casa_id: casa.id, nome: 'Faccende domestiche', icona: 'sparkles', colore: '#1F7A8C', ordine: 1 })
+    .insert({ casa_id: casa.id, nome: CATEGORIA_FACCENDE_NOME, icona: 'sparkles', colore: '#1F7A8C', ordine: 1 })
     .select()
     .single();
 
   await admin.from('attivita').insert(
-    CUCINA.map((a, i) => ({
+    ATTIVITA_CUCINA.map((a, i) => ({
       casa_id: casa.id,
       categoria_id: catCucina!.id,
       nome: a.nome,
@@ -210,7 +86,7 @@ async function main() {
     })),
   );
   await admin.from('attivita').insert(
-    FACCENDE.map((a, i) => ({
+    ATTIVITA_FACCENDE.map((a, i) => ({
       casa_id: casa.id,
       categoria_id: catFaccende!.id,
       nome: a.nome,
@@ -236,7 +112,7 @@ async function main() {
 
   console.log('Popolo la dispensa (senza quantità)…');
   await admin.from('prodotto').insert(
-    PRODOTTI.map((p) => ({
+    PRODOTTI_INIZIALI.map((p) => ({
       casa_id: casa.id,
       nome: p.nome,
       categoria_dispensa: p.categoria,

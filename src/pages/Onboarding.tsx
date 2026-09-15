@@ -1,7 +1,26 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
+import { applicaSeedIniziale } from '../lib/applicaSeedIniziale';
 import { supabase } from '../lib/supabase';
+
+/** Messaggi di errore comprensibili invece del testo grezzo di Postgres/Supabase. */
+function messaggioErrore(e: unknown, fallback: string): string {
+  if (e && typeof e === 'object' && 'message' in e && typeof e.message === 'string') {
+    if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+      return 'Sembra che manchi la connessione. Controlla la rete e riprova.';
+    }
+  }
+  return fallback;
+}
+
+function messaggioErroreInvito(e: unknown): string {
+  const messaggio = e && typeof e === 'object' && 'message' in e ? String(e.message) : '';
+  if (messaggio.includes('invito_scaduto')) return 'Questo invito è scaduto. Chiedi un nuovo link a chi ti ha invitato.';
+  if (messaggio.includes('invito_gia_usato')) return 'Questo invito è già stato usato. Chiedi un nuovo link a chi ti ha invitato.';
+  if (messaggio.includes('invito_non_trovato')) return 'Non trovo questo invito. Controlla di aver incollato il link giusto.';
+  return messaggioErrore(e, 'Il link non è valido o è scaduto. Chiedi un nuovo invito a chi ti ha invitato.');
+}
 
 export function Onboarding() {
   const { session } = useAuth();
@@ -9,6 +28,7 @@ export function Onboarding() {
   const [scelta, setScelta] = useState<'menu' | 'crea' | 'invito'>('menu');
   const [nomeCasa, setNomeCasa] = useState('');
   const [nomeMembro, setNomeMembro] = useState('');
+  const [usaDatiIniziali, setUsaDatiIniziali] = useState(true);
   const [tokenInvito, setTokenInvito] = useState('');
   const [errore, setErrore] = useState<string | null>(null);
   const [inCorso, setInCorso] = useState(false);
@@ -25,17 +45,25 @@ export function Onboarding() {
         .single();
       if (erroreCasa) throw erroreCasa;
 
-      const { error: erroreMembro } = await supabase.from('membro').insert({
-        casa_id: (casa as { id: string }).id,
-        utente_id: session.user.id,
-        nome: nomeMembro || session.user.user_metadata.full_name || 'Tu',
-        ruolo: 'admin',
-      });
+      const { data: membro, error: erroreMembro } = await supabase
+        .from('membro')
+        .insert({
+          casa_id: (casa as { id: string }).id,
+          utente_id: session.user.id,
+          nome: nomeMembro || session.user.user_metadata.full_name || 'Tu',
+          ruolo: 'admin',
+        })
+        .select()
+        .single();
       if (erroreMembro) throw erroreMembro;
+
+      if (usaDatiIniziali) {
+        await applicaSeedIniziale((casa as { id: string }).id, (membro as { id: string }).id);
+      }
 
       navigate('/oggi', { replace: true });
     } catch (e) {
-      setErrore(e instanceof Error ? e.message : 'Qualcosa è andato storto.');
+      setErrore(messaggioErrore(e, 'Non sono riuscito a creare la casa. Riprova tra poco.'));
     } finally {
       setInCorso(false);
     }
@@ -51,8 +79,8 @@ export function Onboarding() {
       });
       if (error) throw error;
       navigate('/oggi', { replace: true });
-    } catch {
-      setErrore('Il link non è valido o è scaduto. Chiedi un nuovo invito a chi ti ha invitato.');
+    } catch (e) {
+      setErrore(messaggioErroreInvito(e));
     } finally {
       setInCorso(false);
     }
@@ -101,6 +129,18 @@ export function Onboarding() {
             value={nomeMembro}
             onChange={(e) => setNomeMembro(e.target.value)}
           />
+          <label className="flex items-start gap-2 text-15 text-fondale/70">
+            <input
+              type="checkbox"
+              className="touch-target mt-0.5"
+              checked={usaDatiIniziali}
+              onChange={(e) => setUsaDatiIniziali(e.target.checked)}
+            />
+            <span>
+              Partiamo da queste: Cucina e Faccende domestiche già pronte, con una dispensa di base. Poi le
+              sistemi come vuoi.
+            </span>
+          </label>
           <button
             type="button"
             disabled={inCorso}
