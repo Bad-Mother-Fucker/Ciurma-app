@@ -91,6 +91,7 @@ export function AssegnazioniCategoria({ casaId, categoriaId, assegnazioni, membr
       {membriDisponibili.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 border-t border-fondale/10 pt-3">
           <select
+            aria-label="Scegli un membro da assegnare"
             className="touch-target rounded-xl border border-fondale/20 px-2 text-13"
             value={membroSelezionato}
             onChange={(e) => setMembroSelezionato(e.target.value)}

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../lib/AuthContext';
 import { useMembri } from '../lib/casaData';
 import { supabase } from '../lib/supabase';
@@ -15,6 +15,21 @@ export function Impostazioni() {
   const { data: membri = [] } = useMembri(casaId);
 
   const invalidaMembri = () => void queryClient.invalidateQueries({ queryKey: ['membri', casaId] });
+
+  // Realtime: chi entra con un invito compare subito, senza refresh manuale.
+  useEffect(() => {
+    if (!casaId) return;
+    const canale = supabase
+      .channel(`membro:${casaId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'membro', filter: `casa_id=eq.${casaId}` },
+        invalidaMembri,
+      )
+      .subscribe();
+    return () => void supabase.removeChannel(canale);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- invalidaMembri è stabile quanto casaId
+  }, [casaId]);
 
   const cambiaRuolo = useMutation({
     mutationFn: async ({ id, ruolo }: { id: string; ruolo: RuoloMembro }) => {

@@ -347,3 +347,11 @@ exception when duplicate_object then null; end $$;
 do $$ begin
   alter publication supabase_realtime add table voce_spesa;
 exception when duplicate_object then null; end $$;
+
+-- Non richiesto esplicitamente dalla specifica (che elenca solo
+-- completamento/prodotto/voce_spesa), ma serve perché "due account entrano
+-- nella stessa casa e si vedono a vicenda" (criterio di uscita fase 1) sia
+-- vero anche senza un refresh manuale della pagina.
+do $$ begin
+  alter publication supabase_realtime add table membro;
+exception when duplicate_object then null; end $$;

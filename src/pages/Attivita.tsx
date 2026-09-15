@@ -185,6 +185,7 @@ export function Attivita() {
                         onChange={(e) => setNuovaAttivita((s) => ({ ...s, [cat.id]: e.target.value }))}
                       />
                       <select
+                        aria-label="Cadenza della nuova attività"
                         className="touch-target rounded-xl border border-fondale/20 px-2 text-13"
                         value={cadenzaNuovaAttivita[cat.id] ?? 7}
                         onChange={(e) =>

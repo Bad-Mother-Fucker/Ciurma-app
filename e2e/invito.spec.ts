@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { creaUtenteDiTest } from './fixtures';
+import { creaCasaVuota, creaUtenteDiTest, loginDiTest } from './fixtures';
 
 test('login → crea casa → genera invito → secondo utente entra → entrambi si vedono', async ({
   browser,
@@ -12,16 +12,8 @@ test('login → crea casa → genera invito → secondo utente entra → entramb
 
   const contestoA = await browser.newContext();
   const pagA = await contestoA.newPage();
-  await pagA.goto('/');
-  await pagA.getByTestId('e2e-email').fill(emailA);
-  await pagA.getByTestId('e2e-password').fill('password-e2e');
-  await pagA.getByTestId('e2e-login-submit').click();
-
-  await pagA.getByText('Crea la tua casa').click();
-  await pagA.getByPlaceholder('Nome della casa').fill('Casa e2e');
-  await pagA.getByPlaceholder('Il tuo nome').fill('Utente A');
-  await pagA.getByText('Crea la casa').click();
-  await expect(pagA).toHaveURL(/\/oggi/);
+  await loginDiTest(pagA, emailA);
+  await creaCasaVuota(pagA, 'Casa e2e', 'Utente A');
 
   await pagA.getByText('Impostazioni').click();
   await pagA.getByText('Genera link di invito').click();
