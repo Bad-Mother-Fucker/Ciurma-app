@@ -35,3 +35,8 @@ android/keystore.properties
 *.njsproj
 *.sln
 *.sw?
+.vercel
+.env*
+
+# Cache locale della CLI Supabase (creata da `supabase link`/`projects list`)
+supabase/.temp

@@ -21,6 +21,39 @@ verificabile senza quei pezzi mancanti* — inclusa una verifica visiva reale
 a 360px con Chromium headless, che ha già trovato un bug vero (i font del
 marchio non venivano caricati).
 
+## Terza iterazione — deploy reale
+
+Su richiesta, l'app è stata **davvero messa online** con le CLI di Supabase
+e Vercel (token forniti dall'utente, usati e non salvati nel repo):
+
+- **Supabase**: progetto `ciurma-app` (ref `pmjuefvqjpuzyhqnqtgh`, org
+  `pqnaaabtnjnwozcjapfw`, regione `eu-west-1`). `db/schema.sql` applicato
+  via l'API di gestione Supabase (`POST /v1/projects/{ref}/database/query`,
+  niente password del database necessaria con un access token). Verificato
+  dopo l'applicazione: le 9 tabelle esistono, `rowsecurity = true` su tutte.
+- **Vercel**: progetto `badmotherfuckers-projects/ciurma-app`, collegato al
+  repo GitHub (deploy automatico ai push su questo branch). Variabili
+  `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` impostate su
+  Production/Preview/Development e verificate con `vercel env pull`
+  (valore reale, non solo che esistessero).
+- **URL live**: **https://ciurma-app.vercel.app**
+- Verificato dopo il deploy: `curl` restituisce 200, l'HTML include i
+  `<link>` dei font (fix della fase 4 confermato in produzione), il bundle
+  JS servito **non contiene** `service_role` né la stringa del progetto
+  esposta oltre l'URL pubblico previsto.
+- `site_url` e `uri_allow_list` di Supabase Auth aggiornati con l'URL
+  Vercel reale (necessario perché i redirect OAuth funzionino quando Google
+  sarà collegato).
+
+**Non fatto, su scelta esplicita dell'utente**: il provider Google OAuth in
+Supabase Auth resta disattivato (`external_google_enabled: false`). Creare
+un client OAuth richiede la Google Cloud Console dell'utente, che non è
+delegabile a un token API — l'utente ha scelto di rimandarlo. **Login e
+onboarding non sono quindi ancora utilizzabili sul sito live**: il bottone
+"Accedi con Google" è visibile ma non porta a nulla di funzionante finché
+il provider non è configurato. Il resto dell'app (schema, RLS, build) è
+comunque verificabile in produzione.
+
 ## Fase 1 — fondamenta
 
 - [x] Scaffold Vite/React/TS/Tailwind, token in `brand/tokens.css` mappati su `@theme` (Tailwind v4)
@@ -231,7 +264,7 @@ costruzione, non per un errore nei test.
 
 ## Checklist finale — stato onesto
 
-- [~] Login Google: funziona su web *da verificare a mano contro un progetto reale*, su Android *non testato* (nessun SDK)
+- [ ] Login Google: progetto Supabase reale online (https://ciurma-app.vercel.app), ma il provider Google **non è ancora configurato** (scelta dell'utente, rimandata) — bottone visibile, non funzionante; su Android *non testato* (nessun SDK)
 - [~] Invito via link: creazione/condivisione/ingresso implementati e ora *anche* testati e2e (scritti); scadenza e "già usato" hanno messaggi dedicati; **non eseguiti contro un DB reale**
 - [x] Categorie e attività: creazione, modifica **e archiviazione** implementate
 - [x] Assegnazione a membro con giorni della settimana: **editor implementato** (`AssegnazioniCategoria`/`SelettoreGiorni`), coperto da test e2e (scritti, non eseguiti)
