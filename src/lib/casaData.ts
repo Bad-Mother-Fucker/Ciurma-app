@@ -5,39 +5,53 @@ import type {
   AttivitaRow,
   CategoriaAttivita,
   CompletamentoRow,
+  Membro,
   Prodotto,
   VoceSpesa,
 } from '../types/db';
 
-export function useCategorie(casaId: string | undefined) {
+export function useCategorie(casaId: string | undefined, opzioni?: { includiArchiviate?: boolean }) {
+  const includiArchiviate = opzioni?.includiArchiviate ?? false;
   return useQuery({
-    queryKey: ['categorie', casaId],
+    queryKey: ['categorie', casaId, includiArchiviate],
     enabled: !!casaId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('categoria_attivita')
-        .select('*')
-        .eq('casa_id', casaId)
-        .order('ordine');
+      let query = supabase.from('categoria_attivita').select('*').eq('casa_id', casaId).order('ordine');
+      if (!includiArchiviate) query = query.eq('archiviata', false);
+      const { data, error } = await query;
       if (error) throw error;
       return data as CategoriaAttivita[];
     },
   });
 }
 
-export function useAttivita(casaId: string | undefined) {
+export function useAttivita(casaId: string | undefined, opzioni?: { includiInattive?: boolean }) {
+  const includiInattive = opzioni?.includiInattive ?? false;
   return useQuery({
-    queryKey: ['attivita', casaId],
+    queryKey: ['attivita', casaId, includiInattive],
+    enabled: !!casaId,
+    queryFn: async () => {
+      let query = supabase.from('attivita').select('*').eq('casa_id', casaId).order('ordine');
+      if (!includiInattive) query = query.eq('attiva', true);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as AttivitaRow[];
+    },
+  });
+}
+
+export function useMembri(casaId: string | undefined) {
+  return useQuery({
+    queryKey: ['membri', casaId],
     enabled: !!casaId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('attivita')
+        .from('membro')
         .select('*')
         .eq('casa_id', casaId)
-        .eq('attiva', true)
-        .order('ordine');
+        .eq('attivo', true);
       if (error) throw error;
-      return data as AttivitaRow[];
+      return data as Membro[];
     },
   });
 }

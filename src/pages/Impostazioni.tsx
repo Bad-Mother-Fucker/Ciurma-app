@@ -1,8 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useAuth } from '../lib/AuthContext';
+import { useMembri } from '../lib/casaData';
 import { supabase } from '../lib/supabase';
-import type { Invito, Membro } from '../types/db';
+import type { Invito, RuoloMembro } from '../types/db';
 
 export function Impostazioni() {
   const { membro, session } = useAuth();
@@ -11,15 +12,27 @@ export function Impostazioni() {
   const [linkGenerato, setLinkGenerato] = useState<string | null>(null);
   const [copiato, setCopiato] = useState(false);
 
-  const { data: membri = [] } = useQuery({
-    queryKey: ['membri', casaId],
-    enabled: !!casaId,
-    queryFn: async () => {
-      const { data, error } = await supabase.from('membro').select('*').eq('casa_id', casaId).eq('attivo', true);
+  const { data: membri = [] } = useMembri(casaId);
+
+  const invalidaMembri = () => void queryClient.invalidateQueries({ queryKey: ['membri', casaId] });
+
+  const cambiaRuolo = useMutation({
+    mutationFn: async ({ id, ruolo }: { id: string; ruolo: RuoloMembro }) => {
+      const { error } = await supabase.from('membro').update({ ruolo }).eq('id', id);
       if (error) throw error;
-      return data as Membro[];
     },
+    onSuccess: invalidaMembri,
   });
+
+  const rimuoviMembro = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('membro').update({ attivo: false }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidaMembri,
+  });
+
+  const seiAdmin = membro?.ruolo === 'admin';
 
   const generaInvito = useMutation({
     mutationFn: async () => {
@@ -75,7 +88,29 @@ export function Impostazioni() {
           {membri.map((m) => (
             <li key={m.id} className="flex items-center justify-between rounded-2xl bg-white p-3 text-15 shadow-sm">
               <span>{m.nome}</span>
-              <span className="text-13 text-fondale/50">{m.ruolo}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-13 text-fondale/50">{m.ruolo === 'admin' ? 'Admin' : 'Membro'}</span>
+                {seiAdmin && m.id !== membro?.id && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        cambiaRuolo.mutate({ id: m.id, ruolo: m.ruolo === 'admin' ? 'membro' : 'admin' })
+                      }
+                      className="touch-target rounded-full border border-fondale/20 px-3 py-1 text-13"
+                    >
+                      {m.ruolo === 'admin' ? 'Rendi membro' : 'Rendi admin'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => rimuoviMembro.mutate(m.id)}
+                      className="touch-target rounded-full border border-secca/30 px-3 py-1 text-13 text-secca"
+                    >
+                      Rimuovi
+                    </button>
+                  </>
+                )}
+              </div>
             </li>
           ))}
         </ul>

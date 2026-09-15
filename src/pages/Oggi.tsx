@@ -1,5 +1,5 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { BottoneSpunta } from '../components/BottoneSpunta';
 import { useAuth } from '../lib/AuthContext';
 import {
   useAssegnazioni,
@@ -18,7 +18,6 @@ import {
   type Attivita,
   type Completamento,
 } from '../lib/priorita';
-import { supabase } from '../lib/supabase';
 import type { AssegnazioneRow, AttivitaRow, CompletamentoRow } from '../types/db';
 
 function versoAttivita(a: AttivitaRow): Attivita {
@@ -55,7 +54,6 @@ export function Oggi() {
   const casaId = membro?.casa_id;
   const oggi = new Date();
   const giornoSettimana = oggi.getDay();
-  const queryClient = useQueryClient();
 
   const { data: categorie = [], isLoading: c1 } = useCategorie(casaId);
   const { data: attivitaRows = [], isLoading: c2 } = useAttivita(casaId);
@@ -65,16 +63,6 @@ export function Oggi() {
   const { data: vociAperte = [] } = useVociSpesaAperte(casaId);
 
   const caricamento = c1 || c2 || c3 || c4;
-
-  const spunta = useMutation({
-    mutationFn: async (attivitaId: string) => {
-      const { error } = await supabase
-        .from('completamento')
-        .insert({ casa_id: casaId, attivita_id: attivitaId, membro_id: membro!.id });
-      if (error) throw error;
-    },
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['completamenti', casaId] }),
-  });
 
   if (caricamento || !membro) {
     return <p className="p-6 text-15 text-fondale/60">Carico la tua giornata…</p>;
@@ -124,13 +112,12 @@ export function Oggi() {
                       >
                         {a.nome}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => spunta.mutate(a.id)}
-                        className="touch-target rounded-full bg-alga/10 px-4 py-2 text-13 font-medium text-alga"
-                      >
-                        Fatto
-                      </button>
+                      <BottoneSpunta
+                        casaId={casaId!}
+                        attivitaId={a.id}
+                        membroId={membro.id}
+                        completamenti={completamentiRows}
+                      />
                     </li>
                   ))}
                 </ul>
