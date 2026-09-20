@@ -48,11 +48,31 @@ e Vercel (token forniti dall'utente, usati e non salvati nel repo):
 **Non fatto, su scelta esplicita dell'utente**: il provider Google OAuth in
 Supabase Auth resta disattivato (`external_google_enabled: false`). Creare
 un client OAuth richiede la Google Cloud Console dell'utente, che non è
-delegabile a un token API — l'utente ha scelto di rimandarlo. **Login e
-onboarding non sono quindi ancora utilizzabili sul sito live**: il bottone
-"Accedi con Google" è visibile ma non porta a nulla di funzionante finché
-il provider non è configurato. Il resto dell'app (schema, RLS, build) è
-comunque verificabile in produzione.
+delegabile a un token API — l'utente ha scelto di rimandarlo.
+
+### Login email/password temporaneo, senza conferma via codice
+
+Per poter provare l'app subito senza passare dalla Google Cloud Console,
+su richiesta esplicita dell'utente:
+
+- `src/pages/Login.tsx` ora mostra anche un vero form email/password
+  (Registrati / Ho già un account), sempre visibile — non più nascosto
+  dietro il flag di test e2e (quel bypass resta, separato, solo per i test
+  automatici).
+- Su Supabase Auth: `mailer_autoconfirm = true`. **Deviazione temporanea e
+  voluta**: normalmente un nuovo account andrebbe confermato via email
+  prima di poter accedere; qui la sessione parte subito dopo la
+  registrazione, senza nessun codice/link da confermare. Verificato con una
+  chiamata reale a `POST /auth/v1/signup`: la risposta contiene già
+  `access_token` ed `email_confirmed_at` valorizzato, quindi non serve
+  nessun secondo passaggio per iniziare a usare l'app.
+- **Priorità segnata per dopo, esplicitamente dall'utente**: reintrodurre
+  la conferma via email (o quantomeno valutarla) prima che l'app sia usata
+  da persone reali fuori da un test — un account senza email verificata è
+  più facile da impersonare/spammare. Aggiunta in "Cosa resta" sotto.
+
+Il resto dell'app (schema, RLS, build) è comunque verificabile in
+produzione con questo metodo di accesso.
 
 ## Fase 1 — fondamenta
 
@@ -265,6 +285,7 @@ costruzione, non per un errore nei test.
 ## Checklist finale — stato onesto
 
 - [ ] Login Google: progetto Supabase reale online (https://ciurma-app.vercel.app), ma il provider Google **non è ancora configurato** (scelta dell'utente, rimandata) — bottone visibile, non funzionante; su Android *non testato* (nessun SDK)
+- [x] Login email/password **temporaneo**, senza conferma via codice: verificato con una vera chiamata a `/auth/v1/signup` (sessione attiva subito dopo la registrazione). Deviazione voluta dall'utente dalla specifica originale ("solo Google"); reintrodurre la conferma email è la priorità #1 sopra.
 - [~] Invito via link: creazione/condivisione/ingresso implementati e ora *anche* testati e2e (scritti); scadenza e "già usato" hanno messaggi dedicati; **non eseguiti contro un DB reale**
 - [x] Categorie e attività: creazione, modifica **e archiviazione** implementate
 - [x] Assegnazione a membro con giorni della settimana: **editor implementato** (`AssegnazioniCategoria`/`SelettoreGiorni`), coperto da test e2e (scritti, non eseguiti)
@@ -285,17 +306,28 @@ costruzione, non per un errore nei test.
 
 ## Cosa resta, in ordine di priorità
 
-1. Collegare un vero progetto Supabase di test e far girare `npm run
-   test:e2e` per davvero — è l'unico modo per passare da "scritto" a
-   "verificato" su RLS, invito tra due account, realtime multi-dispositivo
-2. Ripetere la verifica visiva a 360px (fatta finora solo su Login) sulle
-   altre schermate, con un utente autenticato reale
-3. Notifiche locali Android per il turno di oggi
-4. OAuth Google nativo su Android, poi build APK firmata e installazione su
-   un telefono reale (l'unico blocco è l'assenza di un Android SDK qui)
-5. Frasi narrative su misura per attività in "Le più urgenti" (oggi un
+1. **Reintrodurre la conferma email** (`mailer_autoconfirm` torna `false`,
+   più eventualmente un flusso di verifica in UI) prima che l'app sia usata
+   da persone reali fuori da un test — segnato esplicitamente dall'utente
+   come priorità, non un "nice to have" mio.
+2. Configurare il provider Google OAuth (richiede la Google Cloud Console
+   dell'utente) e poi valutare se/come restringere di nuovo l'accesso al
+   solo Google, come da specifica originale, o tenere email+password come
+   metodo secondario permanente — decisione da prendere con l'utente, non
+   da me in autonomia.
+3. Collegare un vero progetto Supabase di test (separato da quello di
+   produzione appena creato) e far girare `npm run test:e2e` per davvero —
+   è l'unico modo per passare da "scritto" a "verificato" su RLS, invito
+   tra due account, realtime multi-dispositivo.
+4. Ripetere la verifica visiva a 360px (fatta finora solo su Login) sulle
+   altre schermate, ora possibile con un utente vero registrato via email
+   sul sito live.
+5. Notifiche locali Android per il turno di oggi.
+6. OAuth Google nativo su Android, poi build APK firmata e installazione su
+   un telefono reale (l'unico blocco è l'assenza di un Android SDK qui).
+7. Frasi narrative su misura per attività in "Le più urgenti" (oggi un
    template generico, grammaticalmente corretto ma non specifico come negli
-   esempi del prompt)
+   esempi del prompt).
 
 ## Decisioni prese senza chiedere, e perché
 
