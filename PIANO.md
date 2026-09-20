@@ -74,6 +74,34 @@ su richiesta esplicita dell'utente:
 Il resto dell'app (schema, RLS, build) è comunque verificabile in
 produzione con questo metodo di accesso.
 
+### Primo bug trovato provando davvero l'app (e non dai test)
+
+Alla prima prova reale sul telefono, "Crea la casa" falliva con "Non sono
+riuscito a creare la casa". Causa, riprodotta con `curl` e una sessione
+vera prima di toccare il codice: un "uovo e gallina" nella RLS — l'insert
+su `casa` passava, ma il `RETURNING` falliva (42501) perché in
+quell'istante l'utente non era ancora membro, e senza `RETURNING` restava
+una **casa orfana** senza membri (buco di sicurezza/spazzatura, non solo
+un bug).
+
+Fix: RPC `crea_casa(p_nome_casa, p_nome_membro)` security definer che crea
+casa + primo membro admin in una transazione; rimossa la policy
+`casa_crea (with check true)` e ristretta `membro_inserisce` ai soli
+membri della casa — casa e membri nascono **solo** dalle RPC `crea_casa`
+e `accetta_invito`. Migrazione applicata al DB live e verificata end-to-end
+con un utente usa-e-getta: RPC ok, membro rileggibile, primo insert del
+seed ok, insert diretto su `casa` ora bloccato (403), zero case orfane.
+
+Corretto nello stesso giro un difetto latente che i test unitari non
+potevano vedere: dopo crea casa / accetta invito la query
+`membro-corrente` restava in cache a `null`, e il router avrebbe
+riportato all'onboarding. Ora viene invalidata prima di navigare.
+
+Lezione per il piano: né i 16 test unitari né i test e2e scritti (mai
+eseguiti) avrebbero preso questo bug — solo un backend reale. Conferma
+che far girare `npm run test:e2e` contro un progetto Supabase di test
+resta tra le prime priorità.
+
 ## Fase 1 — fondamenta
 
 - [x] Scaffold Vite/React/TS/Tailwind, token in `brand/tokens.css` mappati su `@theme` (Tailwind v4)
