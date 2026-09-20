@@ -269,6 +269,37 @@ begin
 end;
 $$;
 
+-- Crea una casa e il suo primo membro (admin) in un colpo solo.
+-- Serve una funzione security definer perché con la sola RLS c'è un "uovo e
+-- gallina": si può inserire la casa, ma non rileggerla (RETURNING) finché
+-- non si è membri — e non si può diventare membri senza il suo id. Passare
+-- di qui evita anche le case orfane (inserite senza nessun membro).
+create or replace function crea_casa(p_nome_casa text, p_nome_membro text)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_casa_id uuid;
+  v_membro_id uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'non_autenticato';
+  end if;
+
+  insert into casa (nome)
+  values (coalesce(nullif(trim(p_nome_casa), ''), 'Casa mia'))
+  returning id into v_casa_id;
+
+  insert into membro (casa_id, utente_id, nome, ruolo)
+  values (v_casa_id, auth.uid(), coalesce(nullif(trim(p_nome_membro), ''), 'Tu'), 'admin')
+  returning id into v_membro_id;
+
+  return json_build_object('casa_id', v_casa_id, 'membro_id', v_membro_id);
+end;
+$$;
+
 -- ============================================================================
 -- ROW LEVEL SECURITY
 -- ============================================================================
@@ -283,19 +314,20 @@ alter table completamento enable row level security;
 alter table prodotto enable row level security;
 alter table voce_spesa enable row level security;
 
--- casa: visibile ai membri della casa.
+-- casa: visibile ai membri della casa. Nessuna policy di insert: una casa si
+-- crea solo tramite la RPC crea_casa (security definer), che la lega subito
+-- al suo primo membro.
 create policy casa_seleziona on casa for select
   using (id in (select case_dell_utente()));
-create policy casa_crea on casa for insert
-  with check (true);
 create policy casa_aggiorna on casa for update
   using (id in (select case_dell_utente()));
 
--- membro: visibile e gestibile solo dentro la propria casa.
+-- membro: visibile e gestibile solo dentro la propria casa. L'ingresso di un
+-- nuovo membro passa solo dalle RPC crea_casa / accetta_invito.
 create policy membro_seleziona on membro for select
   using (casa_id in (select case_dell_utente()));
 create policy membro_inserisce on membro for insert
-  with check (casa_id in (select case_dell_utente()) or utente_id = auth.uid());
+  with check (casa_id in (select case_dell_utente()));
 create policy membro_aggiorna on membro for update
   using (casa_id in (select case_dell_utente()));
 

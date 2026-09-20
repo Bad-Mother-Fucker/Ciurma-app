@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
@@ -8,6 +9,7 @@ export function InvitoAccetta() {
   const { token } = useParams<{ token: string }>();
   const { session, caricamentoSessione } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [nome, setNome] = useState('');
   const [errore, setErrore] = useState<string | null>(null);
   const [inCorso, setInCorso] = useState(false);
@@ -48,6 +50,7 @@ export function InvitoAccetta() {
       setErrore('Questo invito è scaduto o è già stato usato. Chiedi un nuovo link a chi ti ha invitato.');
       return;
     }
+    await queryClient.invalidateQueries({ queryKey: ['membro-corrente'] });
     navigate('/oggi', { replace: true });
   };
 

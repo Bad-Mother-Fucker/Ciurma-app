@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
@@ -25,6 +26,7 @@ function messaggioErroreInvito(e: unknown): string {
 export function Onboarding() {
   const { session } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [scelta, setScelta] = useState<'menu' | 'crea' | 'invito'>('menu');
   const [nomeCasa, setNomeCasa] = useState('');
   const [nomeMembro, setNomeMembro] = useState('');
@@ -38,31 +40,23 @@ export function Onboarding() {
     setInCorso(true);
     setErrore(null);
     try {
-      const { data: casa, error: erroreCasa } = await supabase
-        .from('casa')
-        .insert({ nome: nomeCasa || 'Casa mia' })
-        .select()
-        .single();
-      if (erroreCasa) throw erroreCasa;
-
-      const { data: membro, error: erroreMembro } = await supabase
-        .from('membro')
-        .insert({
-          casa_id: (casa as { id: string }).id,
-          utente_id: session.user.id,
-          nome: nomeMembro || session.user.user_metadata.full_name || 'Tu',
-          ruolo: 'admin',
-        })
-        .select()
-        .single();
-      if (erroreMembro) throw erroreMembro;
+      // Casa + primo membro in un'unica RPC atomica: con la sola RLS non si
+      // può rileggere la casa appena creata finché non se ne è membri.
+      const { data, error } = await supabase.rpc('crea_casa', {
+        p_nome_casa: nomeCasa,
+        p_nome_membro: nomeMembro || session.user.user_metadata.full_name || '',
+      });
+      if (error) throw error;
+      const { casa_id: casaId, membro_id: membroId } = data as { casa_id: string; membro_id: string };
 
       if (usaDatiIniziali) {
-        await applicaSeedIniziale((casa as { id: string }).id, (membro as { id: string }).id);
+        await applicaSeedIniziale(casaId, membroId);
       }
 
+      await queryClient.invalidateQueries({ queryKey: ['membro-corrente'] });
       navigate('/oggi', { replace: true });
     } catch (e) {
+      console.error('creaCasa', e);
       setErrore(messaggioErrore(e, 'Non sono riuscito a creare la casa. Riprova tra poco.'));
     } finally {
       setInCorso(false);
@@ -78,6 +72,7 @@ export function Onboarding() {
         p_nome: nomeMembro || 'Tu',
       });
       if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ['membro-corrente'] });
       navigate('/oggi', { replace: true });
     } catch (e) {
       setErrore(messaggioErroreInvito(e));
