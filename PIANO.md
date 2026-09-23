@@ -272,8 +272,10 @@ volta disponibile.
       ma non eseguita (serve una Google Cloud Console e un progetto
       Supabase reali)
 - [ ] Notifiche locali per il turno di oggi — non implementate
-- [ ] Build APK firmata — non eseguita: nessun Android SDK/keystore in
-      questo ambiente. Procedura completa documentata in `docs/android.md`,
+- [~] Build APK — **debug eseguita e verificata** in questa sessione (vedi
+      `docs/android.md`); release firmata non ancora fatta: nessun keystore
+      di produzione, ed è una scelta da fare con l'utente (il keystore va
+      custodito, chi lo perde non può più aggiornare l'app). Procedura completa documentata in `docs/android.md`,
       incluso perché il deep link `autoVerify` richiede `assetlinks.json`
       pubblicato sul dominio.
 
@@ -329,7 +331,7 @@ costruzione, non per un errore nei test.
 - [x] Nessun segreto nel bundle: verificato (`grep` vuoto)
 - [~] 360px/focus/contrasto: **verificato visivamente per la schermata Login** (Chromium headless, screenshot, zero overflow); le altre schermate restano "scritte per essere corrette", non viste a schermo (richiedono un backend reale)
 - [x] PWA installabile, con icona reale del marchio
-- [ ] APK firmato: non fatto (nessun Android SDK in questo ambiente); icone/splash e fix dello scaffold sono pronti per quando lo sarà
+- [~] APK: **build debug eseguita e verificata** (SDK installato da riga di comando, `assembleDebug` ok, firma/pacchetto/deep link controllati sull'artefatto, consegnato all'utente); manca la firma di **release** con keystore proprio e la prova su un telefono fisico
 - [x] `PIANO.md` aggiornato e onesto
 
 ## Cosa resta, in ordine di priorità

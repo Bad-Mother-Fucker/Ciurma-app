@@ -40,3 +40,4 @@ android/keystore.properties
 
 # Cache locale della CLI Supabase (creata da `supabase link`/`projects list`)
 supabase/.temp
+*.apk

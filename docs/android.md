@@ -5,17 +5,38 @@
 Il progetto `android/` è stato generato con Capacitor (`npx cap add android`)
 e configurato con:
 
-- deep link `https://ciurma.app/invito/*` (intent filter `autoVerify="true"`)
+- deep link `https://ciurma-app.vercel.app/invito/*` (intent filter `autoVerify="true"`)
 - custom URL scheme `ciurma://auth-callback` per il ritorno dell'OAuth Google
 - `src/lib/useDeepLink.ts` che traduce entrambi in navigazione React Router /
   scambio sessione Supabase
 
-**Non verificato in questa sessione**: non c'è un Android SDK/emulatore né un
-dispositivo fisico disponibili nell'ambiente in cui è stato scritto questo
-codice, quindi la build reale (`./gradlew assembleRelease`), l'installazione
-su un telefono e il login Google nativo **non sono stati testati qui**. La
-procedura sotto è quella corretta per Capacitor 8 ma va verificata a mano
-prima di consegnare l'APK.
+**Build debug eseguita e verificata** (23/09/2026): Android SDK installato
+da riga di comando (command-line tools + `platforms;android-36` +
+`build-tools;36.0.0`, quelli richiesti da `variables.gradle`),
+`./gradlew assembleDebug` completato, APK da 4,2 MB. Controlli fatti
+sull'artefatto: `apksigner verify` ok, `aapt dump badging` → package
+`app.ciurma`, minSdk 24, targetSdk 36; il manifest compilato contiene
+entrambi gli intent filter; il bundle web dentro l'APK è quello con gli
+ultimi fix. **Non ancora provato su un telefono fisico** (nessun
+dispositivo/emulatore qui): installazione, login e apertura del deep link
+restano da verificare a mano.
+
+Lo stesso comando riproduce l'APK in locale, senza Android Studio:
+
+```bash
+# una tantum: SDK a riga di comando
+mkdir -p $ANDROID_HOME/cmdline-tools && cd $ANDROID_HOME/cmdline-tools
+curl -L -o t.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+unzip -q t.zip && mv cmdline-tools latest && rm t.zip
+yes | latest/bin/sdkmanager --licenses
+latest/bin/sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+# ogni build
+npm run build && npx cap sync android
+echo "sdk.dir=$ANDROID_HOME" > android/local.properties   # non committato
+cd android && ./gradlew assembleDebug
+# → android/app/build/outputs/apk/debug/app-debug.apk
+```
 
 ## Build di sviluppo
 
@@ -77,8 +98,9 @@ questa sessione con i colori del marchio.
 
 ## Deep link per l'invito
 
-L'intent filter con `autoVerify="true"` per `https://ciurma.app/invito/*`
-funziona solo se `https://ciurma.app/.well-known/assetlinks.json` è
+L'intent filter con `autoVerify="true"` per
+`https://ciurma-app.vercel.app/invito/*` funziona solo se
+`https://ciurma-app.vercel.app/.well-known/assetlinks.json` è
 pubblicato con l'impronta SHA-256 del certificato di firma dell'app:
 
 ```json
