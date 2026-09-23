@@ -48,7 +48,7 @@ create index if not exists membro_utente_idx on membro(utente_id);
 create table if not exists invito (
   id uuid primary key default gen_random_uuid(),
   casa_id uuid not null references casa(id) on delete cascade,
-  token text not null unique default encode(gen_random_bytes(24), 'base64url'),
+  token text not null unique default encode(gen_random_bytes(24), 'hex'),
   creato_da uuid not null references membro(id) on delete cascade,
   creato_il timestamptz not null default now(),
   scade_il timestamptz not null default (now() + interval '7 days'),

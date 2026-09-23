@@ -42,7 +42,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:scheme="https"
-                    android:host="ciurma.app"
+                    android:host="ciurma-app.vercel.app"
                     android:pathPrefix="/invito" />
             </intent-filter>
 
